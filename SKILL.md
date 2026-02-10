@@ -7,7 +7,7 @@ metadata: {"clawdbot":{"emoji":"🤖","requires":{"env":["MANUS_API_KEY"]},"prim
 
 # Manus AI Agent
 
-Use the Manus API to create autonomous AI tasks. Manus can browse the web, use tools, and deliver complete results (reports, code, presentations, etc.).
+Manus is an autonomous AI agent with its own virtual computer. It can browse the web, create files, install software, and deliver complete work products.
 
 ## API Base
 
@@ -21,14 +21,7 @@ Set via:
 - `MANUS_API_KEY` env var
 - Or `skills.manus.apiKey` in clawdbot config
 
-## Recommended Workflow
-
-When using Manus for tasks that produce files (slides, reports, etc.):
-
-1. **Create the task** with `createShareableLink: true`
-2. **Poll for completion** using the task_id
-3. **Extract output files** from the response and download them locally
-4. **Deliver to user** via direct file attachment (don't rely on manus.im share links)
+---
 
 ## Create a Task
 
@@ -49,9 +42,27 @@ Response:
 {
   "task_id": "abc123",
   "task_title": "Task Title",
-  "task_url": "https://manus.im/app/abc123"
+  "task_url": "https://manus.im/app/abc123",
+  "share_url": "https://manus.im/share/abc123"
 }
 ```
+
+### Task Parameters
+
+| Param | Type | Description |
+|-------|------|-------------|
+| `prompt` | string | Task instructions (required) |
+| `agentProfile` | enum | `manus-1.6`, `manus-1.6-lite`, `manus-1.6-max` |
+| `taskMode` | enum | `chat`, `adaptive`, `agent` |
+| `createShareableLink` | bool | Make publicly accessible |
+| `projectId` | string | Associate with a project |
+| `taskId` | string | Continue existing task (multi-turn) |
+| `interactiveMode` | bool | Allow follow-up questions |
+| `connectors` | string[] | Connector UUIDs to enable |
+| `attachments` | array | Files to attach (see below) |
+| `hideInTaskList` | bool | Hide from webapp |
+
+---
 
 ## Agent Profiles
 
@@ -61,50 +72,153 @@ Response:
 | `manus-1.6-lite` | Faster, lighter | Quick/simple stuff |
 | `manus-1.6-max` | Complex, thorough | Deep research/analysis |
 
-**Default:** Always use `manus-1.6` unless user specifies otherwise.
+---
 
-## Task Modes
+## Attachments (NEW)
 
-| Mode | Description |
-|------|-------------|
-| `chat` | Conversational mode |
-| `adaptive` | Auto-selects best approach |
-| `agent` | Full autonomous agent mode (recommended for file creation) |
+Three ways to attach files:
 
-## Get Task Status & Output
+```json
+{
+  "attachments": [
+    {"fileId": "file_abc123"},
+    {"url": "https://example.com/doc.pdf"},
+    {"base64": "data:image/png;base64,iVBOR...", "fileName": "image.png"}
+  ]
+}
+```
+
+### Upload Files First
+
+```bash
+curl -X POST "https://api.manus.ai/v1/files" \
+  -H "API_KEY: $MANUS_API_KEY" \
+  -F "file=@document.pdf"
+```
+
+Returns `file_id` to use in attachments.
+
+---
+
+## Projects (NEW)
+
+Organize tasks with shared instructions:
+
+```bash
+# Create project
+curl -X POST "https://api.manus.ai/v1/projects" \
+  -H "API_KEY: $MANUS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Research Project",
+    "instruction": "Always include citations and sources"
+  }'
+
+# Use project in task
+curl -X POST "https://api.manus.ai/v1/tasks" \
+  -H "API_KEY: $MANUS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Research AI safety trends",
+    "projectId": "proj_abc123"
+  }'
+```
+
+---
+
+## Connectors (NEW)
+
+Let Manus access your other apps. Set up OAuth at manus.im first.
+
+| Connector | Use for |
+|-----------|---------|
+| Gmail | Read/send emails |
+| Google Calendar | Schedule meetings |
+| Notion | Search/update databases |
+
+```json
+{
+  "prompt": "Check my calendar for tomorrow",
+  "connectors": ["connector-uuid-here"]
+}
+```
+
+---
+
+## Webhooks (NEW)
+
+Get notified when tasks complete:
+
+```bash
+# Register webhook
+curl -X POST "https://api.manus.ai/v1/webhooks" \
+  -H "API_KEY: $MANUS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"webhook": {"url": "https://your-endpoint.com/manus"}}'
+```
+
+Webhook payload includes task status, output files, and results.
+
+---
+
+## Multi-Turn Conversations (NEW)
+
+Continue an existing task:
+
+```bash
+curl -X POST "https://api.manus.ai/v1/tasks" \
+  -H "API_KEY: $MANUS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Now add more details to section 3",
+    "taskId": "existing-task-id"
+  }'
+```
+
+---
+
+## Interactive Mode (NEW)
+
+Let Manus ask clarifying questions:
+
+```json
+{
+  "prompt": "Create a presentation",
+  "interactiveMode": true
+}
+```
+
+Manus will ask follow-up questions if the input is insufficient.
+
+---
+
+## Get Task Status
 
 ```bash
 curl "https://api.manus.ai/v1/tasks/{task_id}" \
   -H "API_KEY: $MANUS_API_KEY"
 ```
 
-Status values: `pending`, `running`, `completed`, `failed`
+Status: `pending` → `running` → `completed` / `failed`
 
-**Important:** When status is `completed`, check the `output` array for files:
-- Look for `type: "output_file"` entries
-- Download files from `fileUrl` directly
-- Save locally and send to user as attachments
+### Output Files
 
-## Extracting Output Files
-
-The task response includes output like:
+When complete, check `output` array for files:
 ```json
 {
-  "output": [
-    {
-      "content": [
-        {
-          "type": "output_file",
-          "fileUrl": "https://private-us-east-1.manuscdn.com/...",
-          "fileName": "presentation.pdf"
-        }
-      ]
-    }
-  ]
+  "output": [{
+    "content": [{
+      "type": "output_file",
+      "fileUrl": "https://manuscdn.com/...",
+      "fileName": "presentation.pdf"
+    }]
+  }]
 }
 ```
 
-Download these files with curl and deliver directly to the user rather than relying on share URLs.
+Download files directly - don't rely on share URLs.
+
+---
 
 ## List Tasks
 
@@ -113,12 +227,18 @@ curl "https://api.manus.ai/v1/tasks" \
   -H "API_KEY: $MANUS_API_KEY"
 ```
 
-## Best Practices
+---
 
-1. **Always poll for completion** before telling user the task is done
-2. **Download output files locally** instead of giving manus.im links (they can be unreliable)
-3. **Use `agent` mode** for tasks that create files/documents
-4. **Set reasonable expectations** — Manus tasks can take 2-10+ minutes for complex work
+## Recommended Workflow
+
+1. **Create task** with `createShareableLink: true`, `taskMode: "agent"`
+2. **Poll for completion** using task_id
+3. **Download output files** from `fileUrl` directly
+4. **Deliver to user** as attachments
+
+Tasks can take 2-10+ minutes for complex work.
+
+---
 
 ## Docs
 
