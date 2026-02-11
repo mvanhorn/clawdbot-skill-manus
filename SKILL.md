@@ -5,7 +5,7 @@ homepage: https://manus.im
 user-invocable: true
 disable-model-invocation: true
 metadata:
-  openclaw:
+  clawdbot:
     emoji: "🤖"
     primaryEnv: MANUS_API_KEY
     requires:
