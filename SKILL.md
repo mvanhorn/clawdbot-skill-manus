@@ -239,7 +239,7 @@ curl "https://api.manus.ai/v1/tasks" \
 
 ## Recommended Workflow
 
-1. **Create task** with `createShareableLink: true`, `taskMode: "agent"`
+1. **Create task** with `createShareableLink: false`, `taskMode: "agent"` (set to `true` only if you want a public share URL)
 2. **Poll for completion** using task_id
 3. **Download output files** from `fileUrl` directly
 4. **Deliver to user** as attachments
@@ -265,11 +265,16 @@ Tasks can take 2-10+ minutes for complex work.
 - API key is sent only in the `API_KEY` header to `api.manus.ai`
 
 **What this skill does NOT do:**
-- Does not access local files, databases, or system resources (beyond saving downloaded outputs)
+- Does not access local databases or system resources
 - Does not send your API key to any endpoint other than `api.manus.ai`
-- Does not modify your local system — output files are saved to a directory you specify
 - Cannot be invoked autonomously by the agent (`disable-model-invocation: true`)
 - You must explicitly trigger every Manus task
+
+**Privacy notes:**
+- File uploads (`curl -F "file=@..."`) read from your local filesystem — only upload files you intend to share with Manus
+- `createShareableLink: true` makes task outputs publicly accessible via URL — set to `false` for private results
+- Webhook payloads may include task outputs — ensure your webhook endpoint is secure
+- Downloaded outputs are saved locally to a directory you specify
 
 **Bundled scripts:** `scripts/manus.sh` (Bash — uses `curl` and `jq`)
 
