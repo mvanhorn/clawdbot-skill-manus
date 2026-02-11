@@ -15,240 +15,88 @@ metadata:
 
 # Manus AI Agent
 
-Manus is an autonomous AI agent with its own virtual computer. It can browse the web, create files, install software, and deliver complete work products.
-
-## API Base
-
-`https://api.manus.ai/v1`
+Create tasks for Manus, an autonomous AI agent, and retrieve completed work products.
 
 ## Authentication
 
-Header: `API_KEY: <your-key>`
-
-Set via:
-- `MANUS_API_KEY` env var
-- Or `skills.manus.apiKey` in clawdbot config
+Set `MANUS_API_KEY` env var with your key from [manus.im](https://manus.im).
 
 ---
 
-## Create a Task
+## Commands
+
+All commands use `scripts/manus.sh`.
+
+### Create a Task
 
 ```bash
-curl -X POST "https://api.manus.ai/v1/tasks" \
-  -H "API_KEY: $MANUS_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "Your task description here",
-    "agentProfile": "manus-1.6",
-    "taskMode": "agent",
-    "createShareableLink": true
-  }'
+{baseDir}/scripts/manus.sh create "Your task description here"
+{baseDir}/scripts/manus.sh create "Deep research on topic" manus-1.6-max
 ```
 
-Response:
-```json
-{
-  "task_id": "abc123",
-  "task_title": "Task Title",
-  "task_url": "https://manus.im/app/abc123",
-  "share_url": "https://manus.im/share/abc123"
-}
-```
+Profiles: `manus-1.6` (default), `manus-1.6-lite` (fast), `manus-1.6-max` (thorough).
 
-### Task Parameters
-
-| Param | Type | Description |
-|-------|------|-------------|
-| `prompt` | string | Task instructions (required) |
-| `agentProfile` | enum | `manus-1.6`, `manus-1.6-lite`, `manus-1.6-max` |
-| `taskMode` | enum | `chat`, `adaptive`, `agent` |
-| `createShareableLink` | bool | Make publicly accessible |
-| `projectId` | string | Associate with a project |
-| `taskId` | string | Continue existing task (multi-turn) |
-| `interactiveMode` | bool | Allow follow-up questions |
-| `connectors` | string[] | Connector UUIDs to enable |
-| `attachments` | array | Files to attach (see below) |
-| `hideInTaskList` | bool | Hide from webapp |
-
----
-
-## Agent Profiles
-
-| Profile | Description | Use for |
-|---------|-------------|---------|
-| `manus-1.6` | Standard (default) | Most tasks |
-| `manus-1.6-lite` | Faster, lighter | Quick/simple stuff |
-| `manus-1.6-max` | Complex, thorough | Deep research/analysis |
-
----
-
-## Attachments (NEW)
-
-Three ways to attach files:
-
-```json
-{
-  "attachments": [
-    {"fileId": "file_abc123"},
-    {"url": "https://example.com/doc.pdf"},
-    {"base64": "data:image/png;base64,iVBOR...", "fileName": "image.png"}
-  ]
-}
-```
-
-### Upload Files First
+### Check Status
 
 ```bash
-curl -X POST "https://api.manus.ai/v1/files" \
-  -H "API_KEY: $MANUS_API_KEY" \
-  -F "file=@document.pdf"
+{baseDir}/scripts/manus.sh status <task_id>
 ```
 
-Returns `file_id` to use in attachments.
+Returns: `pending`, `running`, `completed`, or `failed`.
 
----
-
-## Projects (NEW)
-
-Organize tasks with shared instructions:
+### Wait for Completion
 
 ```bash
-# Create project
-curl -X POST "https://api.manus.ai/v1/projects" \
-  -H "API_KEY: $MANUS_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "name": "Research Project",
-    "instruction": "Always include citations and sources"
-  }'
-
-# Use project in task
-curl -X POST "https://api.manus.ai/v1/tasks" \
-  -H "API_KEY: $MANUS_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "Research AI safety trends",
-    "projectId": "proj_abc123"
-  }'
+{baseDir}/scripts/manus.sh wait <task_id>
+{baseDir}/scripts/manus.sh wait <task_id> 300  # custom timeout in seconds
 ```
 
----
+Polls until task completes or times out (default: 600s).
 
-## Connectors (NEW)
-
-Let Manus access your other apps. Set up OAuth at manus.im first.
-
-| Connector | Use for |
-|-----------|---------|
-| Gmail | Read/send emails |
-| Google Calendar | Schedule meetings |
-| Notion | Search/update databases |
-
-```json
-{
-  "prompt": "Check my calendar for tomorrow",
-  "connectors": ["connector-uuid-here"]
-}
-```
-
----
-
-## Webhooks (NEW)
-
-Get notified when tasks complete:
+### Get Task Details
 
 ```bash
-# Register webhook
-curl -X POST "https://api.manus.ai/v1/webhooks" \
-  -H "API_KEY: $MANUS_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"webhook": {"url": "https://your-endpoint.com/manus"}}'
+{baseDir}/scripts/manus.sh get <task_id>
 ```
 
-Webhook payload includes task status, output files, and results.
+Returns full task JSON including status and output.
 
----
-
-## Multi-Turn Conversations (NEW)
-
-Continue an existing task:
+### List Output Files
 
 ```bash
-curl -X POST "https://api.manus.ai/v1/tasks" \
-  -H "API_KEY: $MANUS_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "prompt": "Now add more details to section 3",
-    "taskId": "existing-task-id"
-  }'
+{baseDir}/scripts/manus.sh files <task_id>
 ```
 
----
+Shows filename and download URL for each output file.
 
-## Interactive Mode (NEW)
-
-Let Manus ask clarifying questions:
-
-```json
-{
-  "prompt": "Create a presentation",
-  "interactiveMode": true
-}
-```
-
-Manus will ask follow-up questions if the input is insufficient.
-
----
-
-## Get Task Status
+### Download Output Files
 
 ```bash
-curl "https://api.manus.ai/v1/tasks/{task_id}" \
-  -H "API_KEY: $MANUS_API_KEY"
+{baseDir}/scripts/manus.sh download <task_id>
+{baseDir}/scripts/manus.sh download <task_id> ./output-folder
 ```
 
-Status: `pending` → `running` → `completed` / `failed`
+Downloads all output files to the specified directory (default: current directory).
 
-### Output Files
-
-When complete, check `output` array for files:
-```json
-{
-  "output": [{
-    "content": [{
-      "type": "output_file",
-      "fileUrl": "https://manuscdn.com/...",
-      "fileName": "presentation.pdf"
-    }]
-  }]
-}
-```
-
-Download files directly - don't rely on share URLs.
-
----
-
-## List Tasks
+### List Tasks
 
 ```bash
-curl "https://api.manus.ai/v1/tasks" \
-  -H "API_KEY: $MANUS_API_KEY"
+{baseDir}/scripts/manus.sh list
 ```
 
 ---
 
-## Recommended Workflow
+## Typical Workflow
 
-1. **Create task** with `createShareableLink: false`, `taskMode: "agent"` (set to `true` only if you want a public share URL)
-2. **Poll for completion** using task_id
-3. **Download output files** from `fileUrl` directly
-4. **Deliver to user** as attachments
-
-Tasks can take 2-10+ minutes for complex work.
+1. **Create task**: `manus.sh create "your prompt"`
+2. **Wait for completion**: `manus.sh wait <task_id>`
+3. **Download results**: `manus.sh download <task_id>`
 
 ---
 
-## Docs
+## Advanced API Features
+
+For file attachments, webhooks, connectors, projects, multi-turn conversations, and interactive mode, see the full Manus API documentation:
 
 - API Reference: https://open.manus.ai/docs
 - Main Docs: https://manus.im/docs
@@ -257,25 +105,18 @@ Tasks can take 2-10+ minutes for complex work.
 
 ## Security & Permissions
 
-**This skill delegates tasks to Manus, a separate autonomous AI agent.**
-
 **What this skill does:**
-- Sends task prompts to Manus API at `api.manus.ai` via `scripts/manus.sh`
-- Polls for task completion and downloads output files to your local machine
-- Can upload local files to Manus when you use the attachments feature (`curl -F "file=@..."`)
+- Sends task prompts to the Manus API at `api.manus.ai`
+- Polls for task completion and downloads output files from Manus CDN
 - API key is sent only in the `API_KEY` header to `api.manus.ai`
 
 **What this skill does NOT do:**
+- Does not upload local files (file upload is an advanced API feature not implemented in the bundled script)
+- Does not register webhooks or connect external accounts
 - Does not send your API key to any endpoint other than `api.manus.ai`
-- Does not access local databases or modify system configuration
-- Does not run background processes or install software
+- Does not modify local system configuration
 - Cannot be invoked autonomously by the agent (`disable-model-invocation: true`)
 - You must explicitly trigger every Manus task
-
-**Privacy considerations:**
-- Set `createShareableLink: false` to keep task outputs private (default in recommended workflow)
-- Only upload files you intend to share with Manus
-- Webhook payloads may include task outputs — ensure your webhook endpoint is secure
 
 **Bundled scripts:** `scripts/manus.sh` (Bash — uses `curl` and `jq`)
 

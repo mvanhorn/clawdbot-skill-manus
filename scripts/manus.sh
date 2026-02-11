@@ -20,7 +20,7 @@ case "$action" in
     curl -s -X POST "$API_BASE/tasks" \
       -H "API_KEY: $MANUS_API_KEY" \
       -H "Content-Type: application/json" \
-      -d "{\"prompt\": $(echo "$prompt" | jq -Rs .), \"agentProfile\": \"$profile\", \"taskMode\": \"agent\", \"createShareableLink\": true}"
+      -d "{\"prompt\": $(echo "$prompt" | jq -Rs .), \"agentProfile\": \"$profile\", \"taskMode\": \"agent\", \"createShareableLink\": false}"
     ;;
   
   get)
