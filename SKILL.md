@@ -2,7 +2,15 @@
 name: manus
 description: Create and manage AI agent tasks via Manus API. Manus is an autonomous AI agent that can browse the web, use tools, and deliver complete work products.
 homepage: https://manus.im
-metadata: {"clawdbot":{"emoji":"🤖","requires":{"env":["MANUS_API_KEY"]},"primaryEnv":"MANUS_API_KEY"}}
+user-invocable: true
+disable-model-invocation: true
+metadata:
+  openclaw:
+    emoji: "🤖"
+    primaryEnv: MANUS_API_KEY
+    requires:
+      bins: [curl, jq]
+      env: [MANUS_API_KEY]
 ---
 
 # Manus AI Agent
@@ -244,3 +252,25 @@ Tasks can take 2-10+ minutes for complex work.
 
 - API Reference: https://open.manus.ai/docs
 - Main Docs: https://manus.im/docs
+
+---
+
+## Security & Permissions
+
+**This skill delegates tasks to Manus, a separate autonomous AI agent.**
+
+**What this skill does:**
+- Sends task prompts to Manus API at `api.manus.ai` via `scripts/manus.sh`
+- Polls for task completion and downloads output files to your local machine
+- API key is sent only in the `API_KEY` header to `api.manus.ai`
+
+**What this skill does NOT do:**
+- Does not access local files, databases, or system resources (beyond saving downloaded outputs)
+- Does not send your API key to any endpoint other than `api.manus.ai`
+- Does not modify your local system — output files are saved to a directory you specify
+- Cannot be invoked autonomously by the agent (`disable-model-invocation: true`)
+- You must explicitly trigger every Manus task
+
+**Bundled scripts:** `scripts/manus.sh` (Bash — uses `curl` and `jq`)
+
+Review `scripts/manus.sh` before first use to verify behavior.
