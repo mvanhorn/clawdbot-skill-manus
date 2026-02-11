@@ -262,19 +262,20 @@ Tasks can take 2-10+ minutes for complex work.
 **What this skill does:**
 - Sends task prompts to Manus API at `api.manus.ai` via `scripts/manus.sh`
 - Polls for task completion and downloads output files to your local machine
+- Can upload local files to Manus when you use the attachments feature (`curl -F "file=@..."`)
 - API key is sent only in the `API_KEY` header to `api.manus.ai`
 
 **What this skill does NOT do:**
-- Does not access local databases or system resources
 - Does not send your API key to any endpoint other than `api.manus.ai`
+- Does not access local databases or modify system configuration
+- Does not run background processes or install software
 - Cannot be invoked autonomously by the agent (`disable-model-invocation: true`)
 - You must explicitly trigger every Manus task
 
-**Privacy notes:**
-- File uploads (`curl -F "file=@..."`) read from your local filesystem — only upload files you intend to share with Manus
-- `createShareableLink: true` makes task outputs publicly accessible via URL — set to `false` for private results
+**Privacy considerations:**
+- Set `createShareableLink: false` to keep task outputs private (default in recommended workflow)
+- Only upload files you intend to share with Manus
 - Webhook payloads may include task outputs — ensure your webhook endpoint is secure
-- Downloaded outputs are saved locally to a directory you specify
 
 **Bundled scripts:** `scripts/manus.sh` (Bash — uses `curl` and `jq`)
 
