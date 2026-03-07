@@ -7,7 +7,7 @@ license: MIT
 repository: https://github.com/mvanhorn/clawdbot-skill-manus
 homepage: https://manus.im
 metadata:
-  clawdbot:
+  openclaw:
     emoji: "🤖"
     requires:
       env:
@@ -34,7 +34,7 @@ Header: `API_KEY: <your-key>`
 
 Set via:
 - `MANUS_API_KEY` env var
-- Or `skills.manus.apiKey` in clawdbot config
+- Or `skills.manus.apiKey` in openclaw config
 
 ## Recommended Workflow
 
