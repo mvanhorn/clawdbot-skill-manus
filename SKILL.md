@@ -1,8 +1,23 @@
 ---
 name: manus
-description: Create and manage AI agent tasks via Manus API. Manus is an autonomous AI agent that can browse the web, use tools, and deliver complete work products.
+version: "1.1.0"
+description: Create and manage AI agent tasks via Manus API. Manus 1.5 autonomously browses the web, uses tools, and delivers complete work products. Cost-efficient Manus-1.5-Lite available.
+author: mvanhorn
+license: MIT
+repository: https://github.com/mvanhorn/clawdbot-skill-manus
 homepage: https://manus.im
-metadata: {"clawdbot":{"emoji":"🤖","requires":{"env":["MANUS_API_KEY"]},"primaryEnv":"MANUS_API_KEY"}}
+metadata:
+  clawdbot:
+    emoji: "🤖"
+    requires:
+      env:
+        - MANUS_API_KEY
+    primaryEnv: MANUS_API_KEY
+    tags:
+      - agent
+      - automation
+      - manus
+      - web-browsing
 ---
 
 # Manus AI Agent
