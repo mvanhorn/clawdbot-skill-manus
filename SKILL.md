@@ -1,7 +1,7 @@
 ---
 name: manus
-version: "1.1.0"
-description: Create and manage AI agent tasks via Manus API. Manus 1.5 autonomously browses the web, uses tools, and delivers complete work products. Cost-efficient Manus-1.5-Lite available.
+version: "2.0.0"
+description: Delegate complex tasks to Manus AI - web research, report generation, code building, data scraping. Task templates, monitoring, cost tracking, result retrieval.
 author: mvanhorn
 license: MIT
 repository: https://github.com/mvanhorn/clawdbot-skill-manus
@@ -18,100 +18,266 @@ metadata:
       - automation
       - manus
       - web-browsing
+      - research
+      - reports
+      - scraping
+      - code-generation
+      - data-extraction
+      - task-delegation
+      - autonomous
+      - ai-agent
+      - cost-tracking
+    triggers:
+      - manus
+      - delegate
+      - autonomous task
+      - have manus
+      - ask manus
+      - send to manus
+      - manus research
+      - manus report
+      - manus scrape
+      - manus build
+      - check manus
+      - manus status
+      - manus history
+      - manus cost
 ---
 
 # Manus AI Agent
 
-Use the Manus API to create autonomous AI tasks. Manus can browse the web, use tools, and deliver complete results (reports, code, presentations, etc.).
+Delegate complex tasks to Manus - an autonomous AI agent that browses the web, writes code, generates reports, scrapes data, and delivers complete work products.
 
-## API Base
+## API Configuration
 
-`https://api.manus.ai/v1`
+**Base URL:** `https://api.manus.im/v1`
 
-## Authentication
-
-Header: `API_KEY: <your-key>`
+**Authentication Header:** `API_KEY: <your-key>`
 
 Set via:
-- `MANUS_API_KEY` env var
-- Or `skills.manus.apiKey` in openclaw config
+- `MANUS_API_KEY` environment variable
+- Or `skills.manus.apiKey` in OpenClaw config
 
-## Recommended Workflow
+## Agent Profiles and Pricing
 
-When using Manus for tasks that produce files (slides, reports, etc.):
+| Profile | Speed | Depth | Best for | Relative cost |
+|---------|-------|-------|----------|---------------|
+| `manus-1.5` | Standard | Full | Most tasks, file creation, reports | Standard |
+| `manus-1.5-lite` | Fast | Light | Quick lookups, simple questions, summaries | ~40% cheaper |
+| `manus-1.5-max` | Slow | Deep | Complex multi-step research, thorough analysis | ~2x standard |
 
-1. **Create the task** with `createShareableLink: true`
-2. **Poll for completion** using the task_id
-3. **Extract output files** from the response and download them locally
-4. **Deliver to user** via direct file attachment (don't rely on manus.im share links)
+**Default:** Always use `manus-1.5` unless the user explicitly asks for lite or max.
 
-## Create a Task
+### Cost estimation guidance
+
+Before creating a task, inform the user of the expected profile:
+- **Simple/quick tasks** (summaries, single-page lookups): recommend `manus-1.5-lite`
+- **Standard tasks** (reports, presentations, code projects): use `manus-1.5`
+- **Complex tasks** (multi-source research, competitive analysis, deep dives): suggest `manus-1.5-max`
+
+Users can override with "use lite", "use max", or "use the cheap one" / "use the thorough one".
+
+## Task Modes
+
+| Mode | Description | When to use |
+|------|-------------|-------------|
+| `agent` | Full autonomous agent with tool use | File creation, web browsing, code writing (recommended default) |
+| `chat` | Conversational back-and-forth | Simple Q&A, brainstorming |
+| `adaptive` | Auto-selects best approach | When unsure which mode fits |
+
+**Default:** Always use `agent` mode for tasks that produce deliverables.
+
+---
+
+## Task Templates
+
+Use these templates to create well-structured tasks. Always include `createShareableLink: true`.
+
+### Research Template
+
+For market research, competitive analysis, topic deep-dives.
 
 ```bash
-curl -X POST "https://api.manus.ai/v1/tasks" \
+curl -s -X POST "https://api.manus.im/v1/tasks" \
   -H "API_KEY: $MANUS_API_KEY" \
   -H "Content-Type: application/json" \
   -d '{
-    "prompt": "Your task description here",
-    "agentProfile": "manus-1.6",
+    "prompt": "Research [TOPIC]. Find the top [N] [entities] by [criteria]. For each, provide: name, description, key metrics, recent news. Compile into a structured report with sections, tables, and citations. Include a summary with key takeaways.",
+    "agentProfile": "manus-1.5",
     "taskMode": "agent",
     "createShareableLink": true
   }'
 ```
 
-Response:
+**Example prompts:**
+- "Research the top 10 AI startups in healthcare by funding raised in 2025. For each provide founding year, total funding, key product, and notable customers."
+- "Do a competitive analysis of project management tools: Asana, Monday, Linear, Jira, ClickUp. Compare pricing, features, integrations, and user reviews."
+- "Research the current state of autonomous vehicle regulations in the US, EU, and China. Summarize key differences and recent changes."
+
+### Report Generation Template
+
+For creating formatted documents, presentations, executive summaries.
+
+```bash
+curl -s -X POST "https://api.manus.im/v1/tasks" \
+  -H "API_KEY: $MANUS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Create a [FORMAT] about [TOPIC]. Include: [SECTIONS]. Use professional formatting with headers, bullet points, and data tables where appropriate. Export as [FILE_TYPE].",
+    "agentProfile": "manus-1.5",
+    "taskMode": "agent",
+    "createShareableLink": true
+  }'
+```
+
+**Example prompts:**
+- "Create a 10-slide presentation about our company's AI strategy for the board meeting. Include market overview, our position, roadmap, and investment ask."
+- "Write an executive summary report on the state of remote work in 2025. Include statistics, trends, and recommendations. Export as PDF."
+- "Generate a one-page brief comparing AWS, GCP, and Azure for a startup choosing a cloud provider."
+
+### Code Building Template
+
+For generating code projects, scripts, prototypes.
+
+```bash
+curl -s -X POST "https://api.manus.im/v1/tasks" \
+  -H "API_KEY: $MANUS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Build a [LANGUAGE/FRAMEWORK] [PROJECT_TYPE] that [FUNCTIONALITY]. Include: [REQUIREMENTS]. Follow best practices for [LANGUAGE]. Include a README with setup instructions.",
+    "agentProfile": "manus-1.5",
+    "taskMode": "agent",
+    "createShareableLink": true
+  }'
+```
+
+**Example prompts:**
+- "Build a Python Flask API that takes a URL and returns a summary of the page content using BeautifulSoup for scraping. Include error handling, rate limiting, and a Dockerfile."
+- "Create a React dashboard component that displays real-time metrics from a WebSocket connection. Include TypeScript types and unit tests."
+- "Write a bash script that audits an AWS account for security misconfigurations: open S3 buckets, overly permissive IAM policies, unencrypted volumes."
+
+### Data Scraping Template
+
+For extracting structured data from websites.
+
+```bash
+curl -s -X POST "https://api.manus.im/v1/tasks" \
+  -H "API_KEY: $MANUS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Scrape [WEBSITE/SOURCE] and extract [DATA_FIELDS] for [ENTITIES]. Output as [FORMAT: CSV/JSON/table]. Include [N] results. Handle pagination if needed.",
+    "agentProfile": "manus-1.5",
+    "taskMode": "agent",
+    "createShareableLink": true
+  }'
+```
+
+**Example prompts:**
+- "Scrape the top 50 products from Product Hunt this week. Extract: name, tagline, upvote count, maker name, and URL. Output as CSV."
+- "Go to news.ycombinator.com and collect the top 30 stories. Extract title, URL, points, and comment count. Output as JSON."
+- "Find the top 20 open source AI projects on GitHub by stars in the last month. Extract repo name, description, stars, language, and last commit date."
+
+---
+
+## Core API Operations
+
+### Create a Task
+
+```bash
+curl -s -X POST "https://api.manus.im/v1/tasks" \
+  -H "API_KEY: $MANUS_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "prompt": "Your task description here",
+    "agentProfile": "manus-1.5",
+    "taskMode": "agent",
+    "createShareableLink": true
+  }'
+```
+
+**Response:**
 ```json
 {
   "task_id": "abc123",
   "task_title": "Task Title",
-  "task_url": "https://manus.im/app/abc123"
+  "task_url": "https://manus.im/app/abc123",
+  "status": "pending"
 }
 ```
 
-## Agent Profiles
+After creating a task, immediately tell the user:
+1. The task has been submitted
+2. The task ID for reference
+3. Expected duration (2-10+ minutes depending on complexity)
+4. That you will monitor it for completion
 
-| Profile | Description | Use for |
-|---------|-------------|---------|
-| `manus-1.6` | Standard (default) | Most tasks |
-| `manus-1.6-lite` | Faster, lighter | Quick/simple stuff |
-| `manus-1.6-max` | Complex, thorough | Deep research/analysis |
-
-**Default:** Always use `manus-1.6` unless user specifies otherwise.
-
-## Task Modes
-
-| Mode | Description |
-|------|-------------|
-| `chat` | Conversational mode |
-| `adaptive` | Auto-selects best approach |
-| `agent` | Full autonomous agent mode (recommended for file creation) |
-
-## Get Task Status & Output
+### Get Task Status
 
 ```bash
-curl "https://api.manus.ai/v1/tasks/{task_id}" \
+curl -s "https://api.manus.im/v1/tasks/{task_id}" \
   -H "API_KEY: $MANUS_API_KEY"
 ```
 
-Status values: `pending`, `running`, `completed`, `failed`
+**Status values:**
+| Status | Meaning | Action |
+|--------|---------|--------|
+| `pending` | Queued, not yet started | Wait and poll again in 15-30 seconds |
+| `running` | Actively working | Wait and poll again in 15-30 seconds |
+| `completed` | Finished successfully | Retrieve and deliver results |
+| `failed` | Task errored out | Report error, suggest retry |
 
-**Important:** When status is `completed`, check the `output` array for files:
-- Look for `type: "output_file"` entries
-- Download files from `fileUrl` directly
-- Save locally and send to user as attachments
+### Poll for Completion
 
-## Extracting Output Files
+After creating a task, poll for completion. Use the helper script or curl directly.
 
-The task response includes output like:
+**With the helper script:**
+```bash
+bash scripts/manus.sh wait <task_id> 600
+```
+
+**With curl (manual polling):**
+```bash
+# Poll every 15 seconds until completed or failed
+task_id="YOUR_TASK_ID"
+status="pending"
+while [ "$status" != "completed" ] && [ "$status" != "failed" ]; do
+  sleep 15
+  status=$(curl -s "https://api.manus.im/v1/tasks/$task_id" \
+    -H "API_KEY: $MANUS_API_KEY" | jq -r '.status // "unknown"')
+done
+```
+
+When polling, give the user periodic updates:
+- After 30 seconds: "Still working on it..."
+- After 2 minutes: "Manus is still processing. Complex tasks can take 5-10 minutes."
+- After 5 minutes: "This is taking longer than usual. The task is still running."
+
+### Retrieve Results
+
+When a task completes, the response contains output content and files:
+
+```bash
+curl -s "https://api.manus.im/v1/tasks/{task_id}" \
+  -H "API_KEY: $MANUS_API_KEY"
+```
+
+**Response structure:**
 ```json
 {
+  "task_id": "abc123",
+  "status": "completed",
+  "task_title": "Research Report",
   "output": [
     {
       "content": [
         {
+          "type": "text",
+          "text": "Here is the research summary..."
+        },
+        {
           "type": "output_file",
           "fileUrl": "https://private-us-east-1.manuscdn.com/...",
-          "fileName": "presentation.pdf"
+          "fileName": "research_report.pdf"
         }
       ]
     }
@@ -119,23 +285,149 @@ The task response includes output like:
 }
 ```
 
-Download these files with curl and deliver directly to the user rather than relying on share URLs.
+**Always do these steps when a task completes:**
+1. Extract text content and present it to the user
+2. List all output files with their names
+3. Download files locally using curl
+4. Deliver files to the user directly (do not rely on manus.im share links - they can be unreliable)
 
-## List Tasks
+### Download Output Files
 
 ```bash
-curl "https://api.manus.ai/v1/tasks" \
+# List files from a completed task
+bash scripts/manus.sh files <task_id>
+
+# Download all output files to a directory
+bash scripts/manus.sh download <task_id> ./manus-output
+```
+
+**Manual download:**
+```bash
+curl -sL "https://private-us-east-1.manuscdn.com/path/to/file" -o "output_filename.pdf"
+```
+
+### List Recent Tasks (Task History)
+
+```bash
+curl -s "https://api.manus.im/v1/tasks" \
   -H "API_KEY: $MANUS_API_KEY"
 ```
 
-## Best Practices
+When showing task history to the user, format it as a table:
+```
+| Task ID | Title | Status | Profile | Created |
+|---------|-------|--------|---------|---------|
+| abc123 | Market Research | completed | manus-1.5 | 2 hours ago |
+| def456 | Code Review | running | manus-1.5-lite | 5 min ago |
+```
 
-1. **Always poll for completion** before telling user the task is done
-2. **Download output files locally** instead of giving manus.im links (they can be unreliable)
-3. **Use `agent` mode** for tasks that create files/documents
-4. **Set reasonable expectations** — Manus tasks can take 2-10+ minutes for complex work
+Include status, duration (if completed), and whether output files are available.
 
-## Docs
+---
 
-- API Reference: https://open.manus.ai/docs
-- Main Docs: https://manus.im/docs
+## Recommended Workflow
+
+When the user asks you to delegate a task to Manus:
+
+1. **Understand the request** - determine which template fits (research, report, code, scrape)
+2. **Estimate cost** - recommend the appropriate agent profile based on complexity
+3. **Create the task** - use the matching template with `createShareableLink: true`
+4. **Report submission** - tell the user the task ID and expected wait time
+5. **Poll for completion** - check status every 15-30 seconds
+6. **Retrieve results** - extract text content and download output files
+7. **Deliver to user** - present findings and attach any files directly
+
+### Important guidelines
+
+- **Always poll for completion** before telling the user the task is done
+- **Download output files locally** instead of giving manus.im links (they can be unreliable)
+- **Use `agent` mode** for tasks that create files or documents
+- **Set expectations** - Manus tasks take 2-10+ minutes for complex work
+- **Include `createShareableLink: true`** in every task creation request
+- **Sanitize filenames** when downloading (strip special characters)
+
+---
+
+## Error Recovery
+
+### API key invalid or missing
+
+```
+HTTP 401 or 403
+```
+
+Tell the user:
+- "Your Manus API key appears to be invalid or missing."
+- "Set it with: `export MANUS_API_KEY='your-key-here'`"
+- "Get a key at https://manus.im"
+
+### Task creation failed
+
+```
+HTTP 400 or 500
+```
+
+- Check that the prompt is not empty
+- Verify the agent profile is valid (`manus-1.5`, `manus-1.5-lite`, `manus-1.5-max`)
+- Verify the task mode is valid (`agent`, `chat`, `adaptive`)
+- Retry once after a 5-second wait
+- If it fails again, report the error to the user
+
+### Task failed during execution
+
+When status is `failed`:
+- Report the failure to the user
+- Check the response for an error message or reason
+- Suggest simplifying the prompt or breaking it into smaller tasks
+- Offer to retry with a different agent profile
+
+### Rate limiting
+
+```
+HTTP 429
+```
+
+- Wait 30 seconds before retrying
+- Inform the user: "Manus rate limit reached. Waiting before retry."
+- After 3 failed retries, stop and tell the user to try again later
+
+### Network or timeout errors
+
+- Retry the request once after 5 seconds
+- If polling times out (no completion after 10 minutes), inform the user the task is still running on Manus servers and give them the task ID to check later
+
+---
+
+## Helper Script Reference
+
+The included `scripts/manus.sh` provides CLI shortcuts:
+
+```
+manus.sh create "prompt" [profile]  - Create a new task
+manus.sh get <task_id>              - Get full task details
+manus.sh status <task_id>           - Get status (pending/running/completed/failed)
+manus.sh wait <task_id> [timeout]   - Wait for completion (default: 600s)
+manus.sh files <task_id>            - List output files
+manus.sh download <task_id> [dir]   - Download all output files
+manus.sh list                       - List all tasks
+```
+
+Profiles: `manus-1.5` (default), `manus-1.5-lite`, `manus-1.5-max`
+
+---
+
+## Cross-Skill Integration
+
+- **Need real-time web search?** Use `/parallel` for fast multi-engine web searches that return immediately - good for gathering context before creating a Manus task.
+- **Need social media / trend research?** Use `/last30days` for Twitter/X, Reddit, and news monitoring with sentiment analysis.
+- **Need to read a specific webpage?** Use your built-in WebFetch tool rather than sending a full Manus task for a single page.
+
+Manus is best for tasks that require **autonomous multi-step work** - browsing multiple sites, compiling findings, generating formatted deliverables. For quick lookups, other tools are faster and cheaper.
+
+---
+
+## API Reference
+
+- API Docs: https://open.manus.ai/docs
+- Main Site: https://manus.im
+- Dashboard: https://manus.im/app

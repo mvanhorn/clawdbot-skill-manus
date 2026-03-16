@@ -2,7 +2,7 @@
 # Manus API helper script
 # Usage: manus.sh <action> [args]
 
-API_BASE="https://api.manus.ai/v1"
+API_BASE="https://api.manus.im/v1"
 
 if [ -z "$MANUS_API_KEY" ]; then
   echo "Error: MANUS_API_KEY not set" >&2
@@ -16,7 +16,7 @@ case "$action" in
   create)
     # Create a task: manus.sh create "your prompt here" [profile]
     prompt="$1"
-    profile="${2:-manus-1.6}"
+    profile="${2:-manus-1.5}"
     curl -s -X POST "$API_BASE/tasks" \
       -H "API_KEY: $MANUS_API_KEY" \
       -H "Content-Type: application/json" \
@@ -101,7 +101,7 @@ case "$action" in
     echo "Usage: manus.sh <command> [args]"
     echo ""
     echo "Commands:"
-    echo "  create \"prompt\" [profile]  - Create a new task (default: manus-1.6)"
+    echo "  create \"prompt\" [profile]  - Create a new task (default: manus-1.5)"
     echo "  get <task_id>              - Get full task details"
     echo "  status <task_id>           - Get task status (pending/running/completed/failed)"
     echo "  wait <task_id> [timeout]   - Wait for task completion (default: 600s)"
@@ -109,7 +109,7 @@ case "$action" in
     echo "  download <task_id> [dir]   - Download all output files"
     echo "  list                       - List all tasks"
     echo ""
-    echo "Profiles: manus-1.6 (default), manus-1.6-lite, manus-1.6-max"
+    echo "Profiles: manus-1.5 (default), manus-1.5-lite, manus-1.5-max"
     exit 1
     ;;
 esac
